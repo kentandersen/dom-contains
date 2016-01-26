@@ -8,13 +8,17 @@ let dateFormat = require('dateformat');
 let ProgressBar = require('progress');
 let fetchSiteMap = require('./src/sitemap').fetchSiteMap;
 
-var listOfPagesPath = './pages.txt';
 let numberOfProcesses = 4;
 let startTime = new Date();
+let count = 0;
+
+// Enter the class you want to search for
+let searchString = '.frontpage';
+
 
 function appendListOfPages(data) {
   return new Promise((resolve, reject) => {
-    fs.appendFile(listOfPagesPath, data, e => e ? reject(e) : resolve())
+    fs.appendFile(`./${searchString.replace('.', '')}.txt`, data, e => e ? reject(e) : resolve())
   });
 }
 
@@ -28,9 +32,10 @@ function checkPage(url) {
   return getDocumentForUrl(url).then($ => {
     // there is a bug when using the :not selector with context
     // https://github.com/fb55/css-select/issues/21
-    if($('table').filter(':not(.table)').length) {
+    if($(searchString).length) {
+      count++;
       let title = $('title').text().trim();
-      return appendListOfPages(`${title}\n${url}\n\n`)
+      return appendListOfPages(`${count}: ${title}\n${url}\n\n`)
     }
   });
 }
@@ -69,5 +74,5 @@ appendListOfPages(`\n\n${dateFormat(new Date(), 'mmmm dS yyyy, HH:MM')}\n-------
   .catch(console.log.bind(console));
 
 process.on('exit', () =>
-  console.log(`\nMatching took ${new Duration(startTime, new Date()).toString(1, 1)}`)
+  console.log(`\nMatching took ${new Duration(startTime, new Date()).toString(1, 1)} and found ${count} pages`)
 );
