@@ -1,6 +1,8 @@
 var fetch = require('node-fetch');
 var parseString = require('xml2js').parseString;
 
+var filters = ['.xml', '/Test/'];
+
 var SITEMAP_URL = 'https://www.gjensidige.no/system/sitemap-editors.xml';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -18,6 +20,7 @@ function fetchSiteMap() {
     .then(response => response.text())
     .then(parsXml)
     .then(j => j.urlset.url.map(url => url.loc[0]))
+    .then(urls => urls.filter(url => !filters.some(filterValue => url.indexOf(filterValue) >= 0)));
 }
 
 exports.fetchSiteMap = fetchSiteMap;
