@@ -1,7 +1,6 @@
 var fetch = require('node-fetch');
 var parseString = require('xml2js').parseString;
-
-var filters = ['.xml', '/Test/'];
+var filters = require('../filters.json').filters;
 
 var SITEMAP_URL = 'https://www.gjensidige.no/system/sitemap-editors.xml';
 

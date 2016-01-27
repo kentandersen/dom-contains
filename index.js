@@ -33,9 +33,8 @@ function checkPage(url) {
     // there is a bug when using the :not selector with context
     // https://github.com/fb55/css-select/issues/21
     if($(searchString).length) {
-      count++;
       let title = $('title').text().trim();
-      return appendListOfPages(`${count}: ${title}\n${url}\n\n`)
+      return appendListOfPages(`${++count}: ${title}\n${url}\n\n`)
     }
   });
 }
