@@ -1,31 +1,60 @@
 'use strict';
 
 let fs = require('fs');
+let path = require('path');
 let cheerio = require('cheerio');
 var fetch = require('node-fetch');
 let Duration = require('duration');
 let dateFormat = require('dateformat');
 let ProgressBar = require('progress');
 let fetchSiteMap = require('./src/sitemap').fetchSiteMap;
+let mkdirp = require('mkdirp')
 
+let cachePath = './cache';
+let listOfPagesPath = './pages.txt';
+let debugPages = './debug.txt';
 let numberOfProcesses = 4;
+
 let startTime = new Date();
 let count = 0;
 
 // Enter the class you want to search for
-let searchString = '.frontpage';
+let searchString = '.table';
+let outputFileName = `./${searchString.replace('.', '')}.txt`;
 
+mkdirp.sync(cachePath);
 
 function appendListOfPages(data) {
   return new Promise((resolve, reject) => {
-    fs.appendFile(`./${searchString.replace('.', '')}.txt`, data, e => e ? reject(e) : resolve())
+    fs.appendFile(outputFileName, data, e => e ? reject(e) : resolve())
+  });
+}
+
+function getCacheFilePath(url) {
+  return path.join(cachePath, url.replace('https://www.gjensidige.no/', '').replace(/\//g, '_'));
+}
+
+function getCachedDocument(url) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(getCacheFilePath(url), 'utf8', (e, d) => e ? reject(e) : resolve(d));
+  });
+}
+
+function writeDocumentToCache(url, data) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(getCacheFilePath(url), data, 'utf8', e  => e ? reject(e) : resolve(data));
   });
 }
 
 function getDocumentForUrl(url) {
-  return fetch(url)
-          .then(resp => resp.text())
-          .then(html => cheerio.load(html));
+
+  return getCachedDocument(url)
+    .catch((e) => {
+      return fetch(url)
+        .then(resp => resp.text())
+        .then(html => writeDocumentToCache(url, html))
+    })
+    .then(html => cheerio.load(html))
 }
 
 function checkPage(url) {
@@ -41,7 +70,6 @@ function checkPage(url) {
 
 
 
-console.log('\nFetching site map');
 appendListOfPages(`\n\n${dateFormat(new Date(), 'mmmm dS yyyy, HH:MM')}\n------------------\n\n`)
   .then(fetchSiteMap)
   .then(sitemap => {
